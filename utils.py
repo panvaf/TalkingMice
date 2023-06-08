@@ -73,6 +73,7 @@ def majority_prediction(tokens,window_sz):
     
     predictions = [None]*len(windows)
     correct_pred = 0
+    tokens_present = 0
     
     for i, window in enumerate(windows):
         
@@ -85,11 +86,19 @@ def majority_prediction(tokens,window_sz):
         # Store predictions to look at statistics
         predictions[i] = most_frequent_token
         
-        # Check if prediction is correct
-        if most_frequent_token == window[-1]:
-            correct_pred += 1
+        # Target
+        target = window[-1]
+        
+        # Check if prediction is correct only if a token exists
+        if target:
+            
+            tokens_present += 1
+            
+            if most_frequent_token == target:
+                
+                correct_pred += 1
     
-    return correct_pred/len(windows), predictions
+    return correct_pred/tokens_present, predictions
 
 
 def token_hist(tokens,title,bins=None):
