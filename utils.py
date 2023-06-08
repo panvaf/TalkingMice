@@ -3,15 +3,20 @@ Utilities.
 """
 
 import pandas as pd
+from collections import Counter
+import matplotlib.pyplot as plt
+
 
 def serialize(data,time_series,tokenizer):
     '''
+    Converts raw event-based data to token sequences.
+    
     Parameters:
         data: CSV file with event start, end and ID
         time_series: DatetimeIndex file with time bin starts
         tokenizer: ID Category to token dictionary
 
-    Returns
+    Returns:
         bin_tokens: dictionary with dominant token in each bin
     '''
     
@@ -30,7 +35,7 @@ def serialize(data,time_series,tokenizer):
         events_within_bin = data.loc[(data['start'] < bin_end) & (data['end'] > bin_start)]
         
         if not events_within_bin.empty:
-            max_duration = pd.Timedelta(0.01)
+            max_duration = pd.Timedelta(0)
             max_duration_event = 0
             
             # Find overlap of events with that specific bin and assign bin to event
@@ -47,3 +52,73 @@ def serialize(data,time_series,tokenizer):
             bin_tokens[i] = tokenizer[max_duration_event['ID']]
             
     return bin_tokens
+
+
+
+def majority_prediction(tokens,window_sz):
+    
+    '''
+    Predicts next token to be the most frequent one in a sliding context window.
+    
+    Parameters:
+        tokens: time series of tokens
+        window_sz: sliding window width
+
+    Returns:
+        acc: accuracy of next token prediction
+    '''
+    
+    # Create sliding windows of tokens
+    windows = [tokens[i:i+window_sz] for i in range(len(tokens) - window_sz + 1)]
+    
+    predictions = [None]*len(windows)
+    correct_pred = 0
+    
+    for i, window in enumerate(windows):
+        
+        # Count tokens in the window
+        token_counts = Counter(window[:-1])
+        
+        # Find most frequent token
+        most_frequent_token = token_counts.most_common(1)[0][0]
+        
+        # Store predictions to look at statistics
+        predictions[i] = most_frequent_token
+        
+        # Check if prediction is correct
+        if most_frequent_token == window[-1]:
+            correct_pred += 1
+    
+    return correct_pred/len(windows), predictions
+
+
+def token_hist(tokens,title,bins=None):
+    
+    '''
+    Plot histogram of token occurences.
+    
+    Parameters:
+        tokens: list of numbers representing different tokens
+        title: title of histogram
+        bins: optional bin argument
+
+    Returns:
+        counts: counts of tokens
+        bins: bins these counts are based on
+    '''
+    
+    # Create histogram
+    if bins is None:
+        [counts, bins, _] = plt.hist(tokens, bins=max(tokens)-min(tokens))
+    else:
+        [counts, bins, _] = plt.hist(tokens, bins=bins)
+
+    # Customize the plot
+    plt.xlabel('Token ID')
+    plt.ylabel('Count')
+    plt.title(title)
+
+    # Display the plot
+    plt.show()
+    
+    return counts, bins
