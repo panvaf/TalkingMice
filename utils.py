@@ -5,6 +5,7 @@ Utilities.
 import pandas as pd
 from collections import Counter
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def serialize(data,time_series,tokenizer):
@@ -66,12 +67,17 @@ def majority_prediction(tokens,window_sz):
 
     Returns:
         acc: accuracy of next token prediction
+        predictions: list of model predictions
+        nonzero: mask indicating which predictions have been used to estimate
+                 accuracy
     '''
     
     # Create sliding windows of tokens
     windows = [tokens[i:i+window_sz] for i in range(len(tokens) - window_sz + 1)]
     
-    predictions = [None]*len(windows)
+    predictions = np.empty(len(windows))
+    nonzero = np.zeros(len(windows)).astype(bool)
+    
     correct_pred = 0
     tokens_present = 0
     
@@ -93,12 +99,12 @@ def majority_prediction(tokens,window_sz):
         if target:
             
             tokens_present += 1
+            nonzero[i] = 1
             
             if most_frequent_token == target:
-                
                 correct_pred += 1
     
-    return correct_pred/tokens_present, predictions
+    return correct_pred/tokens_present, predictions, nonzero
 
 
 def token_hist(tokens,title,bins=None):
@@ -118,13 +124,14 @@ def token_hist(tokens,title,bins=None):
     
     # Create histogram
     if bins is None:
-        [counts, bins, _] = plt.hist(tokens, bins=max(tokens)-min(tokens))
-    else:
-        [counts, bins, _] = plt.hist(tokens, bins=bins)
+        bins = np.arange(np.min(tokens), np.max(tokens) + 1 + 1e-10, 1)
+    
+    [counts, bins, _] = plt.hist(tokens, bins=bins)
 
     # Customize the plot
     plt.xlabel('Token ID')
     plt.ylabel('Count')
+    plt.xticks(bins+.5,bins)
     plt.title(title)
 
     # Display the plot

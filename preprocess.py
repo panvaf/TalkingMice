@@ -13,6 +13,12 @@ data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01\\process_
 # Filename
 filename = 'usv_detections_assigned_230209_repertoire'
 
+# Parameters
+bin_size = 200  # in msec
+
+# Output name
+outname = 'token_seq'+'Bin'+str(bin_size)+'.npz'
+
 # Mapping from IDs to tokens, grouping multiple IDs to one token
 tokenizer = {1:1,2:2,3:2,4:2,5:2,6:3,7:3,8:4,9:5,10:6,11:7,12:0}
 # Here we treat the "merged" token as if nothing was there. Maybe modify
@@ -29,11 +35,11 @@ data['end'] = pd.to_datetime(data['xEnd'], unit='s')
 data = data.rename(columns={'manual_type': 'ID'})
 
 # Find the minimum and maximum dates
-min_date = data['start'].min().floor('100L')
-max_date = data['end'].max().ceil('100L')
+min_date = data['start'].min().floor(str(bin_size) + 'L')
+max_date = data['end'].max().ceil(str(bin_size) + 'L')
 
 # Create a continuous time series
-time_series = pd.date_range(start=min_date, end=max_date, freq='100L')
+time_series = pd.date_range(start=min_date, end=max_date, freq=str(bin_size) + 'L')
 
 # Split into left and right
 l_data = data.loc[(data.detection_side == 'left')]
@@ -43,9 +49,9 @@ r_data = data.loc[(data.detection_side == 'right')]
 l_bin_tokens = utils.serialize(l_data, time_series, tokenizer)
 r_bin_tokens = utils.serialize(r_data, time_series, tokenizer)
 
-# Convert to list
-l_tokens = list(l_bin_tokens.values())
-r_tokens = list(r_bin_tokens.values())
+# Convert to array
+l_tokens = np.array(list(l_bin_tokens.values()))
+r_tokens = np.array(list(r_bin_tokens.values()))
 
-# Save lists of tokens
-np.savez(data_path+'\\token_seq.npz',l_tokens=l_tokens,r_tokens=r_tokens)
+# Save arrays of tokens
+np.savez(data_path+'\\'+outname,l_tokens=l_tokens,r_tokens=r_tokens)
