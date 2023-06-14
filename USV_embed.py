@@ -14,11 +14,15 @@ import audio_utils.visualization
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.lines import Line2D
 
 # Data directory
 data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01')
 # USV detection filename
 filename = 'usv_detections_assigned_230209_repertoire.csv'
+
+# Mapping from IDs to tokens, grouping multiple IDs to one token
+tokenizer = {1:1,2:2,3:2,4:2,5:2,6:3,7:3,8:4,9:5,10:6,11:7,12:0}
 
 # Parameters
 win = .1          # Window around USVs being considered, in s
@@ -74,7 +78,7 @@ plt.show()
 l_usv_detections = l_usv_detections.reset_index(drop=True)
 
 # Get labels
-labels = l_usv_detections.manual_type
+labels = [tokenizer[label] for label in l_usv_detections.manual_type]
 
 for index, row in l_usv_detections.iterrows():
     
@@ -122,16 +126,29 @@ print(explained_variance_ratio)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
+# Get the total number of data points
+total_points = len(labels)
+
 # Generate a range of distinct colors using a colormap
-colors = ['red', 'green', 'blue', 'orange', 'purple', 'brown', 'pink', 'gray', 'olive', 'cyan', 'magenta', 'yellow']
+colors = ['olive', 'red', 'green', 'blue', 'purple', 'cyan', 'magenta', 'yellow']
 
 # Loop through each label and corresponding coefficients
-for label, coefficient in zip(labels, X_pca):
-    # Get the index of the label
-    label_index = int(label % 12)
+for i in range(0, total_points, 10):
+    label = int(labels[i])
+    coefficient = X_pca[i,:]
     
     # Plot the coefficients with the corresponding color
-    ax.scatter(coefficient[0], coefficient[1], coefficient[2], c=colors[label_index], alpha = .2)
+    ax.scatter(coefficient[0], coefficient[1], coefficient[2], c=colors[label], alpha = .4, s = 10)
+    
+# Create a list of labels for the legend
+legend_labels = ['Merge','Simple downsweep','Complex downsweep','Trill','Slashy','Song note','Ultra short','Bark']
+
+# Create custom legend handles with specified colors
+legend_handles = [Line2D([0], [0], marker='o', color='w', markerfacecolor=color,
+                         label=label, markersize=8) for label, color in zip(legend_labels, colors)]
+
+# Add the legend to the plot
+ax.legend(handles=legend_handles)
 
 # Set labels for the x, y, and z axes
 ax.set_xlabel('PC1')
