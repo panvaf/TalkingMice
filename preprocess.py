@@ -14,7 +14,7 @@ data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01\\process_
 filename = 'usv_detections_assigned_230209_repertoire'
 
 # Parameters
-bin_size = 200  # in msec
+bin_size = 50  # in msec
 
 # Output name
 outname = 'token_seq'+'Bin'+str(bin_size)+'.npz'

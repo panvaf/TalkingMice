@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 # Data directory
 data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01\\process_audio')
 # Filename
-bin_size = 100
+bin_size = 50
 filename = 'token_seqBin'+str(bin_size)+'.npz'
 
 # Load the data from CSV
@@ -49,7 +49,7 @@ for i, window_size in enumerate(window_szs):
 # plot accuracies
 plt.plot(window_szs,acc_l,label='left')
 plt.plot(window_szs,acc_r,label='right')
-plt.axhline(1/7,c='red',label='chance')
+plt.axhline(1/len(np.unique(l_tokens)),c='red',label='chance')
 plt.xscale('log')
 plt.xticks(window_szs,window_szs*bin_size/1e3)
 plt.xlabel('Context length (s)')
