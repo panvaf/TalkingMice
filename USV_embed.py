@@ -12,7 +12,7 @@ import numpy as np
 import audio_utils.io
 import audio_utils.visualization
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, FastICA
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
 
@@ -51,8 +51,8 @@ l_usv_detections.dropna(subset=['manual_type'],inplace=True)
 '''
 n_usv_notes = l_usv_detections.shape[0]
 # set some plotting params
-n_rows = 10
-n_cols = 10
+n_rows = 5
+n_cols = 5
 
 fig, axes = plt.subplots(figsize=(8,8), nrows=n_rows, ncols=n_cols)
 for j in range(n_rows):
@@ -68,7 +68,7 @@ for j in range(n_rows):
             axes[j,k].set_yticks([])
             
 plt.tight_layout()
-plt.savefig('examples.png',bbox_inches='tight',format='png',dpi=300)
+#plt.savefig('examples.png',bbox_inches='tight',format='png',dpi=300)
 plt.show()
 '''
 
@@ -102,6 +102,8 @@ for index, row in l_usv_detections.iterrows():
     
 X = specs.reshape(specs.shape[0],-1)
 
+# PCA
+
 # Create a PCA instance with the desired number of components
 pca = PCA(n_components=100)
 
@@ -109,18 +111,18 @@ pca = PCA(n_components=100)
 X_pca = pca.fit_transform(X)
 
 # Access the principal components
-components = pca.components_
+components_pca = pca.components_
 
 # Access the explained variance ratio
 explained_variance_ratio = pca.explained_variance_ratio_
 
-# Print the transformed data and other results
-print("Transformed data:")
-print(X_pca)
-print("Principal components:")
-print(components)
-print("Explained variance ratio:")
-print(explained_variance_ratio)
+# Scree plot
+plt.plot(np.arange(1,101),explained_variance_ratio)
+plt.xlabel('Components')
+plt.ylabel('Explained variance %')
+plt.title('PCA scree plot')
+plt.axvline(3,color='red')
+plt.show()
 
 # Create a figure and a 3D scatter plot
 fig = plt.figure()
@@ -138,7 +140,7 @@ for i in range(0, total_points, 10):
     coefficient = X_pca[i,:]
     
     # Plot the coefficients with the corresponding color
-    ax.scatter(coefficient[0], coefficient[1], coefficient[2], c=colors[label], alpha = .4, s = 10)
+    ax.scatter(coefficient[0], coefficient[1], coefficient[2], c=colors[label], alpha = .4, s = 25)
     
 # Create a list of labels for the legend
 legend_labels = ['Merge','Simple downsweep','Complex downsweep','Trill','Slashy','Song note','Ultra short','Bark']
@@ -148,12 +150,44 @@ legend_handles = [Line2D([0], [0], marker='o', color='w', markerfacecolor=color,
                          label=label, markersize=8) for label, color in zip(legend_labels, colors)]
 
 # Add the legend to the plot
-ax.legend(handles=legend_handles)
+ax.legend(handles=legend_handles, fontsize=14)
 
 # Set labels for the x, y, and z axes
 ax.set_xlabel('PC1')
 ax.set_ylabel('PC2')
 ax.set_zlabel('PC3')
+
+# Show the 3D scatter plot
+plt.show()
+
+
+# ICA
+
+# Create an instance of the FastICA model
+ica = FastICA(n_components=3, random_state=42)
+
+# Fit the model to the data and extract the independent components
+X_ica = ica.fit_transform(X)
+
+# Create a figure and a 3D scatter plot
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+# Loop through each label and corresponding coefficients
+for i in range(0, total_points, 10):
+    label = int(labels[i])
+    coefficient = X_ica[i,:]
+    
+    # Plot the coefficients with the corresponding color
+    ax.scatter(coefficient[0], coefficient[1], coefficient[2], c=colors[label], alpha = .4, s = 25)
+
+# Add the legend to the plot
+ax.legend(handles=legend_handles, fontsize=14)
+
+# Set labels for the x, y, and z axes
+ax.set_xlabel('IC1')
+ax.set_ylabel('IC2')
+ax.set_zlabel('IC3')
 
 # Show the 3D scatter plot
 plt.show()
