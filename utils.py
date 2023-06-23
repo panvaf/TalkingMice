@@ -6,6 +6,8 @@ import pandas as pd
 from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
+from torch.utils.data import Dataset
 
 
 def serialize(data,time_series,tokenizer):
@@ -138,3 +140,83 @@ def token_hist(tokens,title,bins=None):
     plt.show()
     
     return counts, bins
+
+
+# Create dataset for single animal to predict itself
+
+class OnePredictsOne(Dataset):
+    def __init__(self, series, window_width, minus_ones = True):
+        self.series = series
+        self.window_width = window_width
+        self.num_classes = len(set(series))
+        self.minus_ones = minus_ones
+        
+    def __len__(self):
+        return len(self.series) - self.window_width
+    
+    def __getitem__(self, idx):
+        window = self.series[idx:idx+self.window_width]
+        input_data = window[:-1]
+        target = window[-1]
+        
+        # Apply one-hot encoding to input data
+        input_data = torch.tensor(input_data)
+        input_data = torch.nn.functional.one_hot(input_data, num_classes=self.num_classes).float()
+
+        # Convert target to one-hot encoding with -1 for non-relevant classes
+        target = torch.tensor(target)
+        target = torch.nn.functional.one_hot(target, num_classes=self.num_classes).float()
+        
+        # Convert zeros to -1
+        if self.minus_ones:
+            input_data[input_data == 0] = -1
+            target[target == 0] = -1
+        
+        return input_data, target
+    
+    
+# Create dataset for both animals to predict both
+
+class BothPredictBoth(Dataset):
+    def __init__(self, series1, series2, window_width, minus_ones = True):
+        self.series1 = series1
+        self.series2 = series2
+        self.window_width = window_width
+        self.num_classes = len(np.concatenate((series1,series2)))
+        self.minus_ones = minus_ones
+        
+    def __len__(self):
+        return len(self.series1) - self.window_width
+    
+    def __getitem__(self, idx):
+        window1 = self.series1[idx:idx+self.window_width]
+        window2 = self.series2[idx:idx+self.window_width]
+        
+        input_data1 = window1[:-1]
+        input_data2 = window2[:-1]
+        
+        target1 = window1[-1]
+        target2 = window2[-1]
+        
+        # Apply one-hot encoding to input data
+        input_data1 = torch.tensor(input_data1)
+        input_data1 = torch.nn.functional.one_hot(input_data1, num_classes=self.num_classes).float()
+        
+        input_data2 = torch.tensor(input_data2)
+        input_data2 = torch.nn.functional.one_hot(input_data2, num_classes=self.num_classes).float()
+        
+        # Convert targets to one-hot encoding
+        target1 = torch.tensor(target1)
+        target1 = torch.nn.functional.one_hot(target1, num_classes=self.num_classes).float()
+        
+        target2 = torch.tensor(target2)
+        target2 = torch.nn.functional.one_hot(target2, num_classes=self.num_classes).float()
+        
+        # Convert zeros to -1
+        if self.minus_ones:
+            input_data1[input_data1 == 0] = -1
+            input_data2[input_data2 == 0] = -1
+            target1[target1 == 0] = -1
+            target2[target2 == 0] = -1
+        
+        return (input_data1, input_data2), (target1, target2)
