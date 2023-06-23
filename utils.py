@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+import torch.nn as nn
 
 
 def serialize(data,time_series,tokenizer):
@@ -182,7 +183,7 @@ class BothPredictBoth(Dataset):
         self.series1 = series1
         self.series2 = series2
         self.window_width = window_width
-        self.num_classes = len(np.concatenate((series1,series2)))
+        self.num_classes = len(set(np.concatenate((series1,series2))))
         self.minus_ones = minus_ones
         
     def __len__(self):
@@ -200,17 +201,17 @@ class BothPredictBoth(Dataset):
         
         # Apply one-hot encoding to input data
         input_data1 = torch.tensor(input_data1)
-        input_data1 = torch.nn.functional.one_hot(input_data1, num_classes=self.num_classes).float()
+        input_data1 = torch.nn.functional.one_hot(input_data1.to(torch.int64), num_classes=self.num_classes).float()
         
         input_data2 = torch.tensor(input_data2)
-        input_data2 = torch.nn.functional.one_hot(input_data2, num_classes=self.num_classes).float()
+        input_data2 = torch.nn.functional.one_hot(input_data2.to(torch.int64), num_classes=self.num_classes).float()
         
         # Convert targets to one-hot encoding
         target1 = torch.tensor(target1)
-        target1 = torch.nn.functional.one_hot(target1, num_classes=self.num_classes).float()
+        target1 = torch.nn.functional.one_hot(target1.to(torch.int64), num_classes=self.num_classes).float()
         
         target2 = torch.tensor(target2)
-        target2 = torch.nn.functional.one_hot(target2, num_classes=self.num_classes).float()
+        target2 = torch.nn.functional.one_hot(target2.to(torch.int64), num_classes=self.num_classes).float()
         
         # Convert zeros to -1
         if self.minus_ones:
@@ -220,3 +221,15 @@ class BothPredictBoth(Dataset):
             target2[target2 == 0] = -1
         
         return (input_data1, input_data2), (target1, target2)
+    
+    
+# Linear model with softmax output
+
+class LinearModel(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(LinearModel, self).__init__()
+        self.linear = nn.Linear(input_size, output_size)
+    
+    def forward(self, x):
+        out = self.linear(x)
+        return nn.functional.softmax(out, dim=1)
