@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
 
 # Data directory
 data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01\\process_audio')
@@ -41,7 +42,7 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.01)
 
 # Training loop
-num_epochs = 10
+num_epochs = 20
 
 for epoch in range(num_epochs):
     running_loss = 0.0
@@ -97,3 +98,45 @@ for epoch in range(num_epochs):
     avg_loss = running_loss / len(dataloaderBoth)
     accuracy = 100.0 * correct_predictions / total_predictions
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%")
+    
+    
+# Plot weight matrices
+w = model.linear.weight.data.numpy()
+w = w.reshape(output_size,window_width-1,2,n_token)
+w_l = w[:,:,0,:]
+w_r = w[:,:,1,:]
+w_l = np.reshape(w_l,(output_size,n_token*(window_width-1)))
+w_r = np.reshape(w_r,(output_size,n_token*(window_width-1)))
+w_ll = w_l[:n_token,:]
+w_lr = w_l[n_token:,:]
+w_rr = w_r[n_token:,:]
+w_rl = w_r[:n_token,:]
+
+split_weights = [w_ll, w_lr, w_rl, w_rr]
+
+titles = ['Left-Left', 'Left-Right', 'Right-Left', 'Right-Right']
+
+# Get the maximum and minimum values across all sub-matrices
+vmin = np.min([np.min(w) for sublist in split_weights for w in sublist])
+vmax = np.max([np.max(w) for sublist in split_weights for w in sublist])
+
+# Plot the sub-matrices one on top of each other
+fig, axes = plt.subplots(4, 1, figsize=(8, 5), sharex=True)
+
+for ax, weight, title in zip(axes, split_weights, titles):
+    im = ax.imshow(weight, cmap='hot', interpolation='nearest', vmin=vmin, vmax=vmax)
+    ax.set_title(title)
+
+# Add x and y labels to the shared axes
+axes[-1].set_xlabel('Window size * Input')
+axes[len(axes) // 2].set_ylabel('Output')
+
+fig.subplots_adjust(right=0.8)
+cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+fig.colorbar(im, cax=cbar_ax)
+
+# Save plot
+plt.savefig('weights.png',bbox_inches='tight',format='png',dpi=300)
+
+# Display the plot
+plt.show()
