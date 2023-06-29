@@ -222,7 +222,53 @@ class BothPredictBoth(Dataset):
         
         return (input_data1, input_data2), (target1, target2)
     
+# Create dataset for both animals to predict one. Cleaner implementation
+
+class BothPredictOne(Dataset):
+    def __init__(self, series1, series2, window_width, minus_ones = False,
+                 predict = 'First'):
+        self.series1 = series1
+        self.series2 = series2
+        self.window_width = window_width
+        self.num_classes = len(set(np.concatenate((series1,series2))))
+        self.minus_ones = minus_ones
+        self.predict = predict
+        
+    def __len__(self):
+        return len(self.series1) - self.window_width
     
+    def __getitem__(self, idx):
+        window1 = self.series1[idx:idx+self.window_width]
+        window2 = self.series2[idx:idx+self.window_width]
+        
+        input_data1 = window1[:-1]
+        input_data2 = window2[:-1]
+        
+        if self.predict == 'First':    
+            target = window1[-1]
+        elif self.predict == 'Second':
+            target = window2[-1]
+        
+        # Apply one-hot encoding to input data
+        input_data1 = torch.tensor(input_data1)
+        input_data1 = torch.nn.functional.one_hot(input_data1.to(torch.int64), num_classes=self.num_classes).float()
+        
+        input_data2 = torch.tensor(input_data2)
+        input_data2 = torch.nn.functional.one_hot(input_data2.to(torch.int64), num_classes=self.num_classes).float()
+        
+        # Convert target to one-hot encoding
+        target = torch.tensor(target)
+        target = torch.nn.functional.one_hot(target.to(torch.int64), num_classes=self.num_classes).float()
+
+        # Convert zeros to -1
+        if self.minus_ones:
+            input_data1[input_data1 == 0] = -1
+            input_data2[input_data2 == 0] = -1
+            target[target == 0] = -1
+        
+        return (input_data1, input_data2), target
+
+
 # Linear model with softmax output
 
 class LinearModel(nn.Module):

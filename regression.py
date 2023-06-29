@@ -11,11 +11,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 # Data directory
 data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01\\process_audio')
 # Filename
-bin_size = 50
+bin_size = 100
 filename = 'token_seqBin'+str(bin_size)+'.npz'
 
 # Load the data from CSV
@@ -39,10 +40,10 @@ input_size = 2 * n_token * (window_width-1)
 output_size = 2 * n_token  # Number of unique values in target
 model = utils.LinearModel(input_size, output_size)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.01)
+optimizer = optim.SGD(model.parameters(), lr=0.03)
 
 # Training loop
-num_epochs = 20
+num_epochs = 10
 
 for epoch in range(num_epochs):
     running_loss = 0.0
@@ -98,8 +99,8 @@ for epoch in range(num_epochs):
     avg_loss = running_loss / len(dataloaderBoth)
     accuracy = 100.0 * correct_predictions / total_predictions
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {avg_loss:.4f}, Accuracy: {accuracy:.2f}%")
-    
-    
+
+
 # Plot weight matrices
 w = model.linear.weight.data.numpy()
 w = w.reshape(output_size,window_width-1,2,n_token)
@@ -120,12 +121,19 @@ titles = ['Left-Left', 'Left-Right', 'Right-Left', 'Right-Right']
 vmin = np.min([np.min(w) for sublist in split_weights for w in sublist])
 vmax = np.max([np.max(w) for sublist in split_weights for w in sublist])
 
+vabs = np.max(np.abs([vmin,vmax]))
+
 # Plot the sub-matrices one on top of each other
 fig, axes = plt.subplots(4, 1, figsize=(8, 5), sharex=True)
 
+x_locator = MultipleLocator(base=n_token)
+y_locator = MultipleLocator(base=n_token//2) 
+
 for ax, weight, title in zip(axes, split_weights, titles):
-    im = ax.imshow(weight, cmap='hot', interpolation='nearest', vmin=vmin, vmax=vmax)
+    im = ax.imshow(weight, cmap='bwr', interpolation='nearest', vmin=-vabs, vmax=vabs)
     ax.set_title(title)
+    ax.xaxis.set_major_locator(x_locator)
+    ax.yaxis.set_major_locator(y_locator)
 
 # Add x and y labels to the shared axes
 axes[-1].set_xlabel('Window size * Input')
