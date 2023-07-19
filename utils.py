@@ -279,3 +279,36 @@ class LinearModel(nn.Module):
     def forward(self, x):
         out = self.linear(x)
         return nn.functional.softmax(out, dim=1)
+    
+    
+# Append location information to dataframe with USV detections
+
+def append_loc(usv,l_locations,r_locations,fps=50):
+    
+    # Timestamps
+    t_start = usv['start']
+    t_end = usv['end']
+    
+    frame_start = int(t_start*fps)
+    frame_end = int(t_end*fps) + 1
+    
+    # Average locations
+    l_loc = np.average(l_locations[frame_start:frame_end,:],axis=0).flatten()
+    r_loc = np.average(r_locations[frame_start:frame_end,:],axis=0).flatten()
+    
+    # Column names
+    sensor = ['1', '2', '3', '4', '5', '6']
+    coord = ['x', 'y']
+    
+    names = np.array([[sensor[i] + '_' + coord[j] for j in range(len(coord))] for i in range(len(sensor))]).flatten()
+    
+    names_l = ['l_' + element for element in names]
+    names_r = ['r_' + element for element in names]
+    
+    # Append to series
+    for name, location in zip(names_l, l_loc):
+        usv[name] = location
+    for name, location in zip(names_r, r_loc):
+        usv[name] = location
+    
+    return usv
