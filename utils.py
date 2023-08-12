@@ -21,10 +21,10 @@ def serialize(data,time_series,tokenizer):
         tokenizer: ID Category to token dictionary
 
     Returns:
-        bin_tokens: dictionary with dominant token in each bin
+        bin_tokens: dictionary with predominant token in each bin
     '''
     
-    # Initialize a dictionary to the dominant token in each bin
+    # Initialize a dictionary to the predominant token in each bin
     bin_tokens = {bin: 0 for bin in range(len(time_series) - 1)}
 
     # Iterate over the time series and find tokens that overlap with each bin, then
@@ -56,6 +56,72 @@ def serialize(data,time_series,tokenizer):
             bin_tokens[i] = tokenizer[max_duration_event['ID']]
             
     return bin_tokens
+
+
+def serialize_latents(data, time_series, default_vector):
+    '''
+    Converts raw event-based data to token sequences.
+    
+    Parameters:
+        data: CSV file with event start, end and latents as final n_lat elements
+        time_series: DatetimeIndex file with time bin starts
+        default_vector: Predefined latent vector for bins with no events
+    
+    Returns:
+        bin_tokens: Time series with token vectors for each bin
+        bin_binary: Binary vector indicating eligibility of bin for prediction
+    '''
+    
+    # Initialize lists to store token vectors and binary indicators
+    bin_tokens = []
+    bin_binary = []
+    
+    # Initialize previous latent
+    n_lat = len(default_vector)
+    prev_latent = np.zeros(n_lat)
+    
+    # Iterate over the time series and find tokens that overlap with each bin,
+    # then assign the corresponding token vector to each bin
+    
+    for i in range(len(time_series) - 1):
+        # Define bin extent
+        bin_start = time_series[i]
+        bin_end = time_series[i + 1]
+        
+        # Find events that fall within that bin
+        events_within_bin = data.loc[(data['start'] < bin_end) & (data['end'] > bin_start)]
+        
+        if not events_within_bin.empty:
+            max_duration = pd.Timedelta(0)
+            max_duration_event = None
+            
+            # Find overlap of events with that specific bin and assign bin to event
+            # with biggest overlap
+            for _, event in events_within_bin.iterrows():
+                event_start = max(bin_start, event['start'])
+                event_end = min(bin_end, event['end'])
+                duration = event_end - event_start
+                
+                if duration > max_duration:
+                    max_duration = duration
+                    max_duration_event = event
+            
+            latent = np.array(max_duration_event.iloc[-n_lat:])
+            bin_tokens.append(latent)
+            
+            if np.array_equal(latent,prev_latent):
+                # Same event extents to nearby window
+                bin_binary.append(0)
+            else:
+                bin_binary.append(1)
+                
+            prev_latent = latent
+            
+        else:
+            bin_tokens.append(default_vector)
+            bin_binary.append(0)
+            
+    return np.array(bin_tokens), np.array(bin_binary)
 
 
 

@@ -9,30 +9,31 @@ import pandas as pd
 import numpy as np
 
 # Data directory
-data_path = os.path.join(str(Path(os.getcwd()).parent),'data\\03_16_01\\process_audio')
+root = '//Singingmouse/data/usv_calls/usv_note_analysis/03_div_cage_group01_16_song'
+data_path = os.path.join(root,'all detections file')
 # Filename
-filename = 'usv_detections_assigned_230209_repertoire'
+filename = 'locations_latents_all'
 
 # Parameters
 bin_size = 50  # in msec
 
 # Output name
-outname = 'token_seq'+'Bin'+str(bin_size)+'.npz'
+outname = 'token_seq'+'Bin'+str(bin_size)+'Latents'+'.npz'
 
 # Mapping from IDs to tokens, grouping multiple IDs to one token
-tokenizer = {1:1,2:2,3:2,4:2,5:2,6:3,7:3,8:4,9:5,10:6,11:7,12:0}
+#tokenizer = {1:1,2:2,3:2,4:2,5:2,6:3,7:3,8:4,9:5,10:6,11:7,12:0}
 # Here we treat the "merged" token as if nothing was there. Maybe modify
 
 # Load the data from CSV
 data = pd.read_csv(os.path.join(data_path,filename+'.csv'))
-data = data.dropna(subset=['manual_type'])
+#data = data.dropna(subset=['manual_type'])
 
 # Convert start and end values to datetime
 data['start'] = pd.to_datetime(data['start'], unit='s')
-data['end'] = pd.to_datetime(data['xEnd'], unit='s')
+data['end'] = pd.to_datetime(data['end'], unit='s')
 
 # ID column
-data = data.rename(columns={'manual_type': 'ID'})
+#data = data.rename(columns={'manual_type': 'ID'})
 
 # Find the minimum and maximum dates
 min_date = data['start'].min().floor(str(bin_size) + 'L')
@@ -42,16 +43,19 @@ max_date = data['end'].max().ceil(str(bin_size) + 'L')
 time_series = pd.date_range(start=min_date, end=max_date, freq=str(bin_size) + 'L')
 
 # Split into left and right
-l_data = data.loc[(data.detection_side == 'left')]
-r_data = data.loc[(data.detection_side == 'right')]
+l_data = data[data.Left == 1]
+r_data = data[data.Left == 0]
+
+# Empty latent
+empty_lat = np.zeros(32)
 
 # Get time dictionary of tokens
-l_bin_tokens = utils.serialize(l_data, time_series, tokenizer)
-r_bin_tokens = utils.serialize(r_data, time_series, tokenizer)
+l_bin_tokens, l_ind = utils.serialize_latents(l_data,time_series,empty_lat)
+r_bin_tokens, r_ind = utils.serialize_latents(r_data,time_series,empty_lat)
 
 # Convert to array
-l_tokens = np.array(list(l_bin_tokens.values()))
-r_tokens = np.array(list(r_bin_tokens.values()))
+#l_tokens = np.array(l_bin_tokens); l_ind = np.array(l_ind)
+#r_tokens = np.array(r_bin_tokens); r_ind = np.array(r_ind)
 
 # Save arrays of tokens
-np.savez(data_path+'\\'+outname,l_tokens=l_tokens,r_tokens=r_tokens)
+#np.savez(data_path+'\\'+outname,l_tokens=l_tokens,r_tokens=r_tokens)
