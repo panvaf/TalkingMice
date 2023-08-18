@@ -19,7 +19,7 @@ def serialize(data,time_series,tokenizer):
         data: CSV file with event start, end and ID
         time_series: DatetimeIndex file with time bin starts
         tokenizer: ID Category to token dictionary
-
+    
     Returns:
         bin_tokens: dictionary with predominant token in each bin
     '''
@@ -122,6 +122,55 @@ def serialize_latents(data, time_series, default_vector):
             bin_binary.append(0)
             
     return np.array(bin_tokens), np.array(bin_binary)
+
+
+
+def dataset_split(binary_vector, window_size, splits):
+    
+    """
+    Randomly samples locations in the binary vector where the value is one, looks within a specified
+    window size before each sampled location, turns ones in that window into zeros, and continues
+    until the target percentage of ones have been turned into zeros.
+
+    Parameters:
+        binary_vector (numpy.ndarray): The input binary vector.
+        window_size (int): The size of the window to look back before the sampled one.
+        splits (float): List with the desired percentage of ones to be turned into zeros.
+
+    Returns:
+        list of lists: Each list is the indices for one of the sets, last set being training set.
+    """
+    
+    vec = binary_vector.copy()
+    total_ones = np.sum(vec)
+    idx_splits = []
+    
+    for split in splits:
+    
+        ones_to_remove = int(total_ones * split)    
+        result_indices = []
+    
+        while ones_to_remove > 0:
+            one_indices = np.where(vec == 1)[0]
+            
+            if len(one_indices) == 0:
+                break
+            
+            sampled_index = np.random.choice(one_indices)
+            window_start = max(0, sampled_index - window_size + 1)
+            window_end = sampled_index + 1
+            
+            ones_in_window = np.where(vec[window_start:window_end] == 1)[0] + window_start
+            result_indices.extend(ones_in_window)
+            
+            vec[ones_in_window] = 0
+            ones_to_remove -= len(ones_in_window)
+            
+        idx_splits.append(result_indices)
+            
+    idx_splits.append(np.where(vec == 1)[0])
+    
+    return idx_splits
 
 
 

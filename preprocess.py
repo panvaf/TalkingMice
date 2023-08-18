@@ -9,10 +9,10 @@ import pandas as pd
 import numpy as np
 
 # Data directory
-root = '//Singingmouse/data/usv_calls/usv_note_analysis/03_div_cage_group01_16_song'
+root = '//Singingmouse/data/usv_calls/usv_note_analysis/03_div_cage_group01_18_song_empty'
 data_path = os.path.join(root,'all detections file')
 # Filename
-filename = 'locations_latents_all'
+filename = 'locations_latents_all_PC_tOrd'
 
 # Parameters
 bin_size = 50  # in msec
@@ -47,7 +47,7 @@ l_data = data[data.Left == 1]
 r_data = data[data.Left == 0]
 
 # Empty latent
-empty_lat = np.zeros(32)
+empty_lat = np.load(os.path.join(data_path,'empty_latent.npz'))['PCs']
 
 # Get time dictionary of tokens
 l_bin_tokens, l_ind = utils.serialize_latents(l_data,time_series,empty_lat)
@@ -58,4 +58,4 @@ r_bin_tokens, r_ind = utils.serialize_latents(r_data,time_series,empty_lat)
 #r_tokens = np.array(r_bin_tokens); r_ind = np.array(r_ind)
 
 # Save arrays of tokens
-#np.savez(data_path+'\\'+outname,l_tokens=l_tokens,r_tokens=r_tokens)
+#np.savez(data_path+'\\'+outname,l_tokens=l_bin_tokens,l_ind=l_ind,r_tokens=r_bin_tokens,r_ind=r_ind)
