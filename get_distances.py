@@ -8,10 +8,10 @@ from scipy.io import loadmat
 
 def load_and_merge_data_from_mat_files(directory_path):
     merged_array = []
-
+    
     # Get a list of all .mat files in the directory
     mat_files = [file for file in os.listdir(directory_path) if file.endswith('.mat')]
-
+    
     # Extract data from individual files and merge    
     for i, file_name in enumerate(mat_files):
         

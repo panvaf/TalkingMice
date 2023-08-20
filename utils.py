@@ -382,6 +382,34 @@ class BothPredictOne(Dataset):
             target[target == 0] = -1
         
         return (input_data1, input_data2), target
+    
+    
+# Create latents dataset for single animal to predict itself
+
+class OnePredictsOneLatent(Dataset):
+    def __init__(self, series, idxs, window_width):
+        self.series = series
+        self.window_width = window_width
+        self.idxs = idxs
+        
+    def __len__(self):
+        return np.sum(self.idxs)
+    
+    def __getitem__(self, idx):
+        
+        if not self.idxs[idx]:
+            print("Sampled in wrong location!")
+            return
+        
+        window = self.series[idx-self.window_width+1:idx+1,:]
+        input_data = window[:-1,:]
+        target = window[-1,:]
+        
+        # Convert to tensors
+        input_data = torch.tensor(input_data)
+        target = torch.tensor(target)
+        
+        return input_data, target
 
 
 # Linear model with softmax output

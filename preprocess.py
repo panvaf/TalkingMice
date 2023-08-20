@@ -36,7 +36,7 @@ data['end'] = pd.to_datetime(data['end'], unit='s')
 #data = data.rename(columns={'manual_type': 'ID'})
 
 # Find the minimum and maximum dates
-min_date = data['start'].min().floor(str(bin_size) + 'L')
+min_date = data['start'].min().floor(str(bin_size) + 'L') - pd.Timedelta(minutes=1)
 max_date = data['end'].max().ceil(str(bin_size) + 'L')
 
 # Create a continuous time series
@@ -58,4 +58,4 @@ r_bin_tokens, r_ind = utils.serialize_latents(r_data,time_series,empty_lat)
 #r_tokens = np.array(r_bin_tokens); r_ind = np.array(r_ind)
 
 # Save arrays of tokens
-#np.savez(data_path+'\\'+outname,l_tokens=l_bin_tokens,l_ind=l_ind,r_tokens=r_bin_tokens,r_ind=r_ind)
+# np.savez(data_path+'\\'+outname,l_tokens=l_bin_tokens,l_ind=l_ind,r_tokens=r_bin_tokens,r_ind=r_ind)
