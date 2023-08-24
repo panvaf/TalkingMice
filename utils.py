@@ -402,8 +402,8 @@ class OnePredictsOneLatent(Dataset):
             return
         
         window = self.series[idx-self.window_width+1:idx+1,:]
-        input_data = window[:-1,:].astype(np.float16)
-        target = window[-1,:].astype(np.float16)
+        input_data = window[:-1,:].astype(np.float32)
+        target = window[-1,:].astype(np.float32)
         
         # Convert to tensors
         input_data = torch.tensor(input_data)

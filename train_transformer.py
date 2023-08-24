@@ -7,6 +7,7 @@ import numpy as np
 import utils
 from torch.utils.data import DataLoader, Subset
 from transformers import TransformerEncoderOne
+from trainer import TrainerConfig, Trainer
 
 # Parameters
 bin_size = 100 # in msec
@@ -34,20 +35,12 @@ train_dataset = Subset(datasetOne,idx_splits[-1])
 val_dataset = Subset(datasetOne,idx_splits[0])
 test_dataset = Subset(datasetOne,idx_splits[1])
 
-# Dataloader
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=0)
-
-# Create an iterator from the DataLoader
-dataloader_iterator = iter(train_dataloader)
-
-# Fetch the next batch of data samples (just one batch)
-batch = next(dataloader_iterator)
-
-# Unpack the batch into inputs and targets
-inputs, targets = batch
-
 # Define model
-transformer = TransformerEncoderOne(d_model=7, n_heads=1, d_ff=32, max_seq_len = 49,
-                                    n_layers=3, dropout=0.1, n_hidden=32)
+transformer = TransformerEncoderOne(d_model=7, n_heads=1, d_ff=32, max_seq_len=49,
+                                    n_layers=3, dropout=0.1, n_hidden=1)
 
-output = transformer(inputs.permute(1,0,2))
+# Train
+config = TrainerConfig()
+trainer = Trainer(transformer, train_dataset, val_dataset, config)
+
+trainer.train()
