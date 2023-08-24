@@ -15,7 +15,7 @@ data_path = os.path.join(root,'all detections file')
 filename = 'locations_latents_all_PC_tOrd'
 
 # Parameters
-bin_size = 50  # in msec
+bin_size = 20  # in msec
 
 # Output name
 outname = 'token_seq'+'Bin'+str(bin_size)+'Latents'+'.npz'
@@ -58,4 +58,4 @@ r_bin_tokens, r_ind = utils.serialize_latents(r_data,time_series,empty_lat)
 #r_tokens = np.array(r_bin_tokens); r_ind = np.array(r_ind)
 
 # Save arrays of tokens
-# np.savez(data_path+'\\'+outname,l_tokens=l_bin_tokens,l_ind=l_ind,r_tokens=r_bin_tokens,r_ind=r_ind)
+np.savez(data_path+'\\'+outname,l_tokens=l_bin_tokens,l_ind=l_ind,r_tokens=r_bin_tokens,r_ind=r_ind)
